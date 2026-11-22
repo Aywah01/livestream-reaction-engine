@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Livestream Reaction Engine</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!--
+    Vector icon sprite. Every reaction is an <svg><use href="#..."></svg>,
+    so the browser rasterizes from vector paths at whatever size is needed
+    (resolution independence) and the paths are defined once, not per node.
+  -->
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="icon-heart" viewBox="0 0 24 24">
+      <path fill="#ff3b5c" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </symbol>
+    <symbol id="icon-like" viewBox="0 0 24 24">
+      <path fill="#2f8cff" d="M2 21h4V9H2v12zm20-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 1 6.59 7.59C6.22 7.95 6 8.45 6 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+    </symbol>
+    <symbol id="icon-fire" viewBox="0 0 24 24">
+      <path fill="#ff7a1a" d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/>
+      <path fill="#ffd23f" d="M11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/>
+    </symbol>
+    <symbol id="icon-star" viewBox="0 0 24 24">
+      <path fill="#ffc531" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+    </symbol>
+  </svg>
+
+  <main class="app">
+    <section class="stage" id="stage" aria-label="Livestream stage">
+      <div class="stage__label">● LIVE</div>
+      <div class="stats" aria-live="polite">
+        <span>Mode: <strong id="stat-mode">CSS keyframes</strong></span>
+        <span>In flight: <strong id="stat-active">0</strong></span>
+        <span>Nodes in layer: <strong id="stat-nodes">0</strong></span>
+        <span>Spawned: <strong id="stat-total">0</strong></span>
+      </div>
+      <!-- Reactions are appended here. Isolated container = smaller invalidation scope. -->
+      <div class="reaction-layer" id="reaction-layer"></div>
+      <div class="spawn-area" aria-hidden="true"></div>
+    </section>
+
+    <section class="controls" aria-label="Controls">
+      <fieldset class="control-group mode-switch">
+        <legend>Engine</legend>
+        <label><input type="radio" name="mode" value="css" checked /> Phase 1 · CSS @keyframes (layout props)</label>
+        <label><input type="radio" name="mode" value="gsap" /> Phase 2 · GSAP (x, y, scale, opacity)</label>
+      </fieldset>
+
+      <div class="control-group">
+        <span class="control-title">Reaction</span>
+        <div class="icon-picker" id="icon-picker">
+          <button type="button" data-icon="random" class="is-selected" title="Random">🎲</button>
+          <button type="button" data-icon="heart" title="Heart"><svg><use href="#icon-heart"/></svg></button>
+          <button type="button" data-icon="like" title="Like"><svg><use href="#icon-like"/></svg></button>
+          <button type="button" data-icon="fire" title="Fire"><svg><use href="#icon-fire"/></svg></button>
+          <button type="button" data-icon="star" title="Star"><svg><use href="#icon-star"/></svg></button>
+        </div>
+      </div>
+
+      <div class="control-group buttons">
+        <button type="button" class="btn btn--primary" id="send-btn">Send Reaction</button>
+        <button type="button" class="btn" id="burst-btn" title="Spawns 60 reactions over ~1s for repeatable profiling">Burst ×60</button>
+      </div>
+
+      <div class="control-group speed" id="speed-group">
+        <label for="speed" class="control-title">Speed <output id="speed-value" for="speed">1.0×</output></label>
+        <input type="range" id="speed" min="0.1" max="2.0" step="0.1" value="1.0" />
+        <small class="hint" id="speed-hint">GSAP mode only. Changes the speed of reactions already in the air.</small>
+      </div>
+    </section>
+  </main>
+
+  <!-- GSAP is saved locally, so the project runs offline straight from file:// -->
+  <script src="vendor/gsap.min.js"></script>
+  <script src="src/css-engine.js"></script>
+  <script src="src/gsap-engine.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>

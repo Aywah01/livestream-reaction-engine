@@ -1,0 +1,182 @@
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #0d0f14;
+  color: #e8eaf0;
+}
+
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.app {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+}
+
+/* ---------- Stage ---------- */
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 120%, #2a2f45 0%, #12141c 60%);
+}
+
+.stage__label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #e5233b;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .05em;
+}
+
+.stats {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #9aa1b5;
+  font-variant-numeric: tabular-nums;
+}
+.stats strong { color: #fff; }
+
+/*
+  All reactions live in one absolutely positioned layer.
+  `contain: layout paint` stops style, layout and paint work for reactions
+  from spreading to the rest of the page (stats, controls).
+*/
+.reaction-layer {
+  position: absolute;
+  inset: 0;
+  contain: layout paint;
+  pointer-events: none;
+}
+
+.spawn-area {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 160px;
+  height: 56px;
+  transform: translateX(-50%);
+  border-radius: 80px 80px 0 0;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255,255,255,.12), transparent 70%);
+  pointer-events: none;
+}
+
+/* ---------- Shared reaction element ---------- */
+
+.reaction {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+.reaction svg { display: block; width: 100%; height: 100%; }
+
+/* =====================================================================
+   PHASE 1: CSS @keyframes that animate LAYOUT / GEOMETRY properties.
+   This is deliberately the slow way:
+     - `bottom` and `margin-left` move the box  -> Layout every frame
+     - `width` / `height` resize the box        -> Layout + Paint every frame
+   These properties can't run on the compositor, so every frame of every
+   reaction goes through main thread Style -> Layout -> Paint.
+   ===================================================================== */
+
+.reaction--css {
+  /* JS sets per-instance values: --x (spawn column) and --sway (amplitude) */
+  left: var(--x, 50%);
+  bottom: 8px;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  opacity: 0;
+  animation:
+    css-rise 3s linear forwards,
+    css-sway 0.75s ease-in-out 4 alternate;
+}
+
+@keyframes css-rise {
+  0%   { bottom: 8px;  width: 28px; height: 28px; opacity: 0; }
+  10%  {                                          opacity: 1; }
+  70%  {                                          opacity: 1; }
+  100% { bottom: 82%;  width: 46px; height: 46px; opacity: 0; }
+}
+
+@keyframes css-sway {
+  from { margin-left: calc(-14px - var(--sway, 24px)); }
+  to   { margin-left: calc(-14px + var(--sway, 24px)); }
+}
+
+/* =====================================================================
+   PHASE 2: GSAP element. Its box never changes; GSAP writes only
+   `transform` (x, y, scale) and `opacity`, which the compositor can apply
+   without running Layout or Paint again.
+   The box is authored at its MAXIMUM size (48px) and scaled DOWN (0.6 -> 1),
+   so the GPU texture is never enlarged beyond its rasterized resolution
+   and the icon stays sharp.
+   ===================================================================== */
+
+.reaction--gsap {
+  left: 0;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  opacity: 0;
+  backface-visibility: hidden;
+}
+
+/* ---------- Controls ---------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px 28px;
+  padding: 14px 20px;
+  background: #171a22;
+  border-top: 1px solid #262a36;
+}
+
+.control-group { display: flex; align-items: center; gap: 10px; }
+.control-title { color: #9aa1b5; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+
+.mode-switch { border: 0; padding: 0; margin: 0; flex-direction: column; align-items: flex-start; gap: 4px; }
+.mode-switch legend { color: #9aa1b5; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; padding: 0; }
+.mode-switch label { cursor: pointer; }
+
+.icon-picker { display: flex; gap: 6px; }
+.icon-picker button {
+  width: 36px; height: 36px; padding: 6px;
+  border: 1px solid #2c3140; border-radius: 8px;
+  background: #1f2330; color: inherit; font-size: 18px; line-height: 1;
+  cursor: pointer;
+}
+.icon-picker button svg { width: 100%; height: 100%; display: block; }
+.icon-picker button.is-selected { border-color: #6c8cff; background: #26304d; }
+
+.btn {
+  padding: 10px 16px;
+  border: 1px solid #2c3140; border-radius: 8px;
+  background: #1f2330; color: #e8eaf0; font: inherit; font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { background: #262b3a; }
+.btn:active { transform: translateY(1px); }
+.btn--primary { background: #e5233b; border-color: #e5233b; color: #fff; }
+.btn--primary:hover { background: #f23a51; }
+
+.speed { flex-wrap: wrap; max-width: 320px; }
+.speed input { width: 180px; }
+.speed output { color: #fff; font-variant-numeric: tabular-nums; margin-left: 4px; }
+.speed .hint { flex-basis: 100%; color: #6f768a; }
+.speed.is-disabled { opacity: .45; }

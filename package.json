@@ -1,0 +1,14 @@
+{
+  "name": "livestream-reaction-engine",
+  "version": "1.0.0",
+  "description": "Floating reactions engine: CSS keyframes vs GSAP compositor animation",
+  "scripts": {
+    "start": "npx --yes serve ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "gsap": "^3.15.1"
+  }
+}
